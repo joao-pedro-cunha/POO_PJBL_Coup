@@ -1,4 +1,4 @@
-public abstract class Carta extends Baralho {
+public abstract class Carta {
     protected String nome;
     protected int quantidade;
 

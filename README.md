@@ -30,7 +30,7 @@ Este projeto foi desenvolvido como uma aplicação prática dos pilares da **Pro
 Este projeto é um *case study* de POO. Veja como os conceitos foram aplicados:
 
 * ### 🏛️ Herança
-    Provavelmente utilizada para criar uma classe base `Personagem` ou `Carta`, da qual classes específicas como `Duque`, `Assassino` e `Condessa` herdam comportamentos comuns e implementam seus próprios.
+      Utilizada para criar uma classe base `Personagem` ou `Carta`, da qual classes específicas como `Duque`, `Assassino` e `Condessa` herdam comportamentos comuns e implementam seus próprios.
 
 * ### 🧬 Polimorfismo
     Usado de forma crucial nas ações. Um método `executarAcao()` pode existir na classe base, mas seu comportamento muda drasticamente dependendo de qual subclasse (personagem) o está invocando. Isso permite que o motor do jogo trate todas as cartas de forma uniforme, sem precisar saber qual é qual.
@@ -53,7 +53,7 @@ Este projeto é um *case study* de POO. Veja como os conceitos foram aplicados:
 
 1.  Clone este repositório:
     ```bash
-    git clone [URL_DO_SEU_REPOSITORIO]
+    git clone [URL_DO_PROJETO]
     cd coup-java
     ```
 
@@ -82,3 +82,4 @@ Este projeto foi orgulhosamente desenvolvido por:
 * **Gabriel Costa**
 
 ---
+

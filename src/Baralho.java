@@ -8,7 +8,7 @@ public class Baralho {
     private List<Carta> cartas = new ArrayList<>();
 
     public Baralho() {
-        // 4. Popula o baralho (5 de cada carta, total 25)
+        //Popula o baralho (5 de cada carta, total 25)
         for (int i = 0; i < 5; i++) {
             cartas.add(new Duque());
             cartas.add(new Assasino());
@@ -24,13 +24,10 @@ public class Baralho {
 
     public void embaralhar() {
         Collections.shuffle(cartas);
-        System.out.println("[INFO] Baralho foi embaralhado.");
+        System.out.println("Baralho foi embaralhado.");
     }
 
-    /**
-     * Retira e retorna a carta do topo do baralho.
-     * @return A carta do topo, ou null se o baralho estiver vazio.
-     */
+    //Retira a carta do topo do baralho e verifica se esta vazio
     public Carta comprarCarta() {
         if (cartas.isEmpty()) {
             System.out.println("[ERRO] O baralho está vazio!");
@@ -41,15 +38,15 @@ public class Baralho {
         }
     }
 
-
+    //Checa o tamanho do baralho
     public int getTamanho() {
         return cartas.size();
     }
 
-
+    //Devolve a carta ao fundo do baralho
     public void devolverCarta(Carta carta) {
         if (carta != null) {
-            cartas.add(carta); // Adiciona no final da lista (fundo)
+            cartas.add(carta); //Adiciona no final da lista
         }
     }
 }

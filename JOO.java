@@ -1,366 +1,664 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.List;
 
 public class JOO {
-
     private Baralho baralho;
     private List<Jogador> jogadores;
-    private Scanner scanner;
     private boolean jogoRodando;
+    private int indiceJogadorAtual;
 
-    // EFEITO: Códigos ANSI para cores no console - Melhora a visualização
-    public static final String RESET = "\u001B[0m";
-    public static final String RED = "\u001B[31m";
-    public static final String GREEN = "\u001B[32m";
-    public static final String YELLOW = "\u001B[33m";
-    public static final String BLUE = "\u001B[34m";
-    public static final String PURPLE = "\u001B[35m";
-    public static final String CYAN = "\u001B[36m";
-    public static final String BOLD = "\u001B[1m";
+    // COMPONENTES DA INTERFACE GRÁFICA - JAVA EFFECTS VISUAIS
+    private JFrame frame;
+    private JTextArea areaTexto;
+    private JPanel painelBotoes;
+    private JLabel labelJogadorAtual;
+    private JLabel labelMoedas;
+    private JTextArea areaCartas;
+    private JPanel painelJogadores;
+    private JButton[] botoesAcoes;
+
+    // CORES PARA EFEITOS VISUAIS - JAVA EFFECTS
+    private final Color COR_FUNDO = new Color(240, 240, 255);
+    private final Color COR_DESTAQUE = new Color(70, 130, 180);
+    private final Color COR_PERIGO = new Color(220, 20, 60);
+    private final Color COR_SUCESSO = new Color(34, 139, 34);
+    private final Color COR_AVISO = new Color(255, 165, 0);
 
     public JOO() {
         this.baralho = new Baralho();
         this.jogadores = new ArrayList<>();
-        this.scanner = new Scanner(System.in);
         this.jogoRodando = true;
+        this.indiceJogadorAtual = 0;
+
+        // EFEITO: Inicializar interface gráfica
+        inicializarInterface();
     }
 
     public static void main(String[] args) {
-        Jogo jogo = new Jogo();
-        jogo.iniciar();
+        // EFEITO: Executar na Thread de EDT do Swing
+        SwingUtilities.invokeLater(() -> {
+            new JOO().iniciar();
+        });
+    }
+
+    // EFEITO: Método para inicializar todos os componentes da interface
+    private void inicializarInterface() {
+        frame = new JFrame("COUP - Versão Gráfica");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+        frame.getContentPane().setBackground(COR_FUNDO);
+
+        // EFEITO: Criar painel superior com informações do jogador
+        criarPainelSuperior();
+
+        // EFEITO: Criar área central de texto com rolagem
+        criarAreaTexto();
+
+        // EFEITO: Criar painel de botões de ações
+        criarPainelBotoes();
+
+        // EFEITO: Criar painel de informações dos jogadores
+        criarPainelJogadores();
+
+        frame.pack();
+        frame.setSize(900, 700);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    // EFEITO: Configurar painel superior com informações do jogador atual
+    private void criarPainelSuperior() {
+        JPanel painelSuperior = new JPanel(new GridLayout(1, 3));
+        painelSuperior.setBackground(COR_DESTAQUE);
+        painelSuperior.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        labelJogadorAtual = new JLabel("", SwingConstants.CENTER);
+        labelJogadorAtual.setForeground(Color.WHITE);
+        labelJogadorAtual.setFont(new Font("Arial", Font.BOLD, 16));
+
+        labelMoedas = new JLabel("", SwingConstants.CENTER);
+        labelMoedas.setForeground(Color.YELLOW);
+        labelMoedas.setFont(new Font("Arial", Font.BOLD, 14));
+
+        areaCartas = new JTextArea(3, 20);
+        areaCartas.setEditable(false);
+        areaCartas.setBackground(new Color(50, 50, 70));
+        areaCartas.setForeground(Color.WHITE);
+        areaCartas.setFont(new Font("Consolas", Font.PLAIN, 12));
+        areaCartas.setBorder(BorderFactory.createTitledBorder("Cartas na Mão"));
+
+        painelSuperior.add(labelJogadorAtual);
+        painelSuperior.add(labelMoedas);
+        painelSuperior.add(new JScrollPane(areaCartas));
+
+        frame.add(painelSuperior, BorderLayout.NORTH);
+    }
+
+    // EFEITO: Configurar área de texto principal com estilo
+    private void criarAreaTexto() {
+        areaTexto = new JTextArea(20, 50);
+        areaTexto.setEditable(false);
+        areaTexto.setBackground(new Color(30, 30, 30));
+        areaTexto.setForeground(Color.WHITE);
+        areaTexto.setFont(new Font("Consolas", Font.PLAIN, 12));
+        areaTexto.setCaretColor(Color.WHITE);
+
+        JScrollPane scrollPane = new JScrollPane(areaTexto);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Histórico do Jogo"));
+
+        frame.add(scrollPane, BorderLayout.CENTER);
+    }
+
+    // EFEITO: Configurar painel de botões com ações do jogo
+    private void criarPainelBotoes() {
+        painelBotoes = new JPanel(new GridLayout(2, 4, 5, 5));
+        painelBotoes.setBackground(COR_FUNDO);
+        painelBotoes.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        String[] acoes = {
+                "1. Renda (+1 moeda)", "2. Ajuda Externa (+2)", "3. Taxar - Duque (+3)",
+                "4. Assassinar (-3)", "5. Roubar - Capitão", "6. Trocar - Embaixador",
+                "7. Golpe Estado (-7)", "Desistir"
+        };
+
+        botoesAcoes = new JButton[acoes.length];
+
+        for (int i = 0; i < acoes.length; i++) {
+            botoesAcoes[i] = new JButton(acoes[i]);
+            botoesAcoes[i].setFont(new Font("Arial", Font.BOLD, 12));
+            botoesAcoes[i].addActionListener(new ActionListenerAcoes(i + 1));
+
+            // EFEITO: Cores diferentes para cada tipo de ação
+            if (i == 0 || i == 1 || i == 2) botoesAcoes[i].setBackground(new Color(200, 255, 200)); // Ações de ganho
+            if (i == 3 || i == 6) botoesAcoes[i].setBackground(new Color(255, 200, 200)); // Ações de custo
+            if (i == 4 || i == 5) botoesAcoes[i].setBackground(new Color(255, 255, 200)); // Ações especiais
+
+            painelBotoes.add(botoesAcoes[i]);
+        }
+
+        frame.add(painelBotoes, BorderLayout.SOUTH);
+    }
+
+    // EFEITO: Configurar painel lateral com informações dos jogadores
+    private void criarPainelJogadores() {
+        painelJogadores = new JPanel();
+        painelJogadores.setLayout(new BoxLayout(painelJogadores, BoxLayout.Y_AXIS));
+        painelJogadores.setBackground(new Color(200, 200, 220));
+        painelJogadores.setBorder(BorderFactory.createTitledBorder("Jogadores"));
+        painelJogadores.setPreferredSize(new Dimension(200, 0));
+
+        frame.add(painelJogadores, BorderLayout.EAST);
     }
 
     public void iniciar() {
-        // EFEITO: Título com cores e destaque
-        limparConsole();
-        System.out.println(BOLD + BLUE + "=== COUP: VERSÃO JAVA ===" + RESET);
+        adicionarMensagem("=== COUP: VERSÃO GRÁFICA ===", COR_DESTAQUE, true);
 
-        // 1. Setup Jogadores
+        // 1. Setup Jogadores - MANTIDO DO CÓDIGO ORIGINAL
         jogadores.add(new Jogador("Jogador 1"));
         jogadores.add(new Jogador("Jogador 2"));
         jogadores.add(new Jogador("Jogador 3"));
 
-        // 2. Distribuir Cartas (2 para cada)
+        // 2. Distribuir Cartas (2 para cada) - MANTIDO DO CÓDIGO ORIGINAL
         for (Jogador j : jogadores) {
             j.getMao().add(baralho.comprarCarta());
             j.getMao().add(baralho.comprarCarta());
         }
 
-        // EFEITO: Animação de início do jogo
-        efeitoInicioJogo();
+        // EFEITO: Animação de início
+        efeitoAnimacaoInicio();
 
-        // 3. Loop Principal
-        int indiceJogadorAtual = 0;
-
-        while (jogoRodando) {
-
-            // Limpeza de jogadores eliminados
-            jogadores.removeIf(j -> j.getMao().isEmpty());
-
-            // Jogador Vitorioso - CORREÇÃO: Verificação segura
-            if (jogadores.size() == 1) {
-                // EFEITO: Vitória com destaque especial
-                efeitoVitoria(jogadores.get(0));
-                break;
-            } else if (jogadores.isEmpty()) {
-                System.out.println(RED + BOLD + "\n*** EMPATE! ***" + RESET);
-                break;
-            }
-
-            // Indice para decidir a vez de cada jogador
-            if (indiceJogadorAtual >= jogadores.size()) indiceJogadorAtual = 0;
-            Jogador jogadorAtual = jogadores.get(indiceJogadorAtual);
-
-            boolean turnoProcessado = processarTurno(jogadorAtual);
-
-            // CORREÇÃO: Só passa a vez se o turno foi processado corretamente
-            if (turnoProcessado) {
-                indiceJogadorAtual++;
-            }
-            // Se turnoProcessado for false, o jogador atual repete a vez
-        }
-
-        scanner.close();
+        atualizarPainelJogadores();
+        processarProximoTurno();
     }
 
-    // CORREÇÃO: Método agora retorna boolean para controlar a vez
-    private boolean processarTurno(Jogador jogador) {
-        limparConsole();
+    // MANTIDO DO CÓDIGO ORIGINAL: Loop principal adaptado para interface gráfica
+    private void processarProximoTurno() {
+        if (!jogoRodando) return;
 
-        // EFEITO: Header do turno com cores
-        System.out.println("\n" + BOLD + CYAN + "========================================" + RESET);
-        System.out.println(BOLD + "VEZ DE: " + YELLOW + jogador.getNome() + RESET + " | " + GREEN + "Moedas: " + jogador.getQnt_moedas() + RESET);
+        // Limpeza de jogadores eliminados - MANTIDO DO CÓDIGO ORIGINAL
+        jogadores.removeIf(j -> j.getMao().isEmpty());
 
-        // EFEITO: Cartas com cor diferente
-        System.out.print(BOLD + "\nCartas: " + RESET);
-        for(Carta c : jogador.getMao()) {
-            System.out.print(PURPLE + "[" + c.getNome() + "] " + RESET);
+        // Jogador Vitorioso - CORREÇÃO: Verificação segura - MANTIDO DO CÓDIGO ORIGINAL
+        if (jogadores.size() == 1) {
+            efeitoVitoria(jogadores.get(0));
+            return;
+        } else if (jogadores.isEmpty()) {
+            adicionarMensagem("\n*** EMPATE! ***", COR_PERIGO, true);
+            return;
         }
-        System.out.println();
 
-        // EFEITO: Menu colorido para melhor legibilidade
-        System.out.println(BOLD + "\n--- AÇÕES DISPONÍVEIS ---" + RESET);
-        System.out.println(GREEN + "1. Renda (+1 moeda)" + RESET);
-        System.out.println(CYAN + "2. Ajuda Externa (+2 moedas) [Pode ser Bloqueada por Duque]" + RESET);
-        System.out.println(BLUE + "3. Taxar (Duque) (+3 moedas)" + RESET);
-        System.out.println(RED + "4. Assassinar (Assassino) (-3 moedas)" + RESET);
-        System.out.println(YELLOW + "5. Roubar (Capitão) (+2 moedas)" + RESET);
-        System.out.println(PURPLE + "6. Trocar Cartas (Embaixador)" + RESET);
-        System.out.println(BOLD + RED + "7. Golpe de Estado (-7 moedas)" + RESET);
+        // Indice para decidir a vez de cada jogador - MANTIDO DO CÓDIGO ORIGINAL
+        if (indiceJogadorAtual >= jogadores.size()) indiceJogadorAtual = 0;
+        Jogador jogadorAtual = jogadores.get(indiceJogadorAtual);
 
-        System.out.print(BOLD + "\nEscolha: " + RESET);
-        String escolha = scanner.nextLine();
+        processarTurno(jogadorAtual);
+    }
 
+    // CORREÇÃO: Método agora adaptado para interface gráfica
+    private void processarTurno(Jogador jogador) {
+        // EFEITO: Atualizar interface com informações do jogador atual
+        atualizarInterfaceJogador(jogador);
+
+        // EFEITO: Destacar jogador atual no painel
+        destacarJogadorAtual(jogador);
+
+        // EFEITO: Habilitar/desabilitar botões baseado nas moedas
+        atualizarBotoesAcoes(jogador);
+
+        adicionarMensagem("\n========================================", COR_DESTAQUE, false);
+        adicionarMensagem("VEZ DE: " + jogador.getNome() + " | Moedas: " + jogador.getQnt_moedas(),
+                Color.WHITE, true);
+
+        adicionarMensagem("Cartas: " + obterTextoCartas(jogador), Color.WHITE, false);
+    }
+
+    // EFEITO: Atualizar informações do jogador na interface
+    private void atualizarInterfaceJogador(Jogador jogador) {
+        labelJogadorAtual.setText("Jogador: " + jogador.getNome());
+        labelMoedas.setText("Moedas: " + jogador.getQnt_moedas() + " 💰");
+
+        StringBuilder cartas = new StringBuilder();
+        for (Carta c : jogador.getMao()) {
+            cartas.append("[").append(c.getNome()).append("]\n");
+        }
+        areaCartas.setText(cartas.toString());
+    }
+
+    // EFEITO: Atualizar estado dos botões baseado nas moedas
+    private void atualizarBotoesAcoes(Jogador jogador) {
+        int moedas = jogador.getQnt_moedas();
+
+        // Habilitar/desabilitar ações que requerem moedas específicas
+        botoesAcoes[3].setEnabled(moedas >= 3); // Assassinar (4)
+        botoesAcoes[6].setEnabled(moedas >= 7); // Golpe de Estado (7)
+
+        // EFEITO: Feedback visual para botões desabilitados
+        for (int i = 0; i < botoesAcoes.length; i++) {
+            JButton botao = botoesAcoes[i];
+            if (!botao.isEnabled()) {
+                botao.setBackground(Color.GRAY);
+                botao.setForeground(Color.DARK_GRAY);
+            } else {
+                // Restaurar cores originais baseadas no tipo de ação
+                if (i == 0 || i == 1 || i == 2) botao.setBackground(new Color(200, 255, 200));
+                else if (i == 3 || i == 6) botao.setBackground(new Color(255, 200, 200));
+                else if (i == 4 || i == 5) botao.setBackground(new Color(255, 255, 200));
+                botao.setForeground(Color.BLACK);
+            }
+        }
+    }
+
+    // EFEITO: Destacar jogador atual no painel lateral
+    private void destacarJogadorAtual(Jogador jogadorAtual) {
+        Component[] componentes = painelJogadores.getComponents();
+        for (Component comp : componentes) {
+            if (comp instanceof JLabel) {
+                JLabel label = (JLabel) comp;
+                if (label.getText().contains(jogadorAtual.getNome())) {
+                    label.setBackground(Color.YELLOW);
+                    label.setOpaque(true);
+                    label.setBorder(BorderFactory.createLineBorder(Color.ORANGE, 2));
+                } else {
+                    label.setBackground(null);
+                    label.setOpaque(false);
+                    label.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+                }
+            }
+        }
+    }
+
+    // EFEITO: Atualizar painel de jogadores
+    private void atualizarPainelJogadores() {
+        painelJogadores.removeAll();
+
+        for (Jogador j : jogadores) {
+            JLabel label = new JLabel(j.getNome() + " - " + j.getQnt_moedas() + "💰 - " +
+                    j.getMao().size() + "🃏");
+            label.setFont(new Font("Arial", Font.BOLD, 12));
+            label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            label.setForeground(Color.DARK_GRAY);
+            painelJogadores.add(label);
+        }
+
+        painelJogadores.revalidate();
+        painelJogadores.repaint();
+    }
+
+    // EFEITO: Classe para tratar ações dos botões
+    private class ActionListenerAcoes implements ActionListener {
+        private int acao;
+
+        public ActionListenerAcoes(int acao) {
+            this.acao = acao;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (acao == 8) { // Desistir
+                int confirm = JOptionPane.showConfirmDialog(frame,
+                        "Tem certeza que deseja desistir?", "Desistir",
+                        JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    jogoRodando = false;
+                    adicionarMensagem("\n*** JOGO ENCERRADO ***", COR_PERIGO, true);
+                }
+                return;
+            }
+
+            Jogador jogadorAtual = jogadores.get(indiceJogadorAtual);
+            executarAcao(acao, jogadorAtual);
+        }
+    }
+
+    // MÉTODO CORRIGIDO: Executar ação baseada na escolha do botão
+    private void executarAcao(int escolha, Jogador jogador) {
         boolean acaoValida = true;
 
         switch (escolha) {
-            case "1": // (Renda) nao pode ser bloqueada
+            case 1: // (Renda) nao pode ser bloqueada
                 jogador.setQnt_moedas(jogador.getQnt_moedas() + 1);
-                // EFEITO: Feedback visual da ação
-                efeitoMensagemSucesso(">> Pegou Renda. +1 moeda");
+                adicionarMensagem(">> " + jogador.getNome() + " pegou Renda. +1 moeda", COR_SUCESSO, false);
                 break;
 
-            case "2": // Ajuda Externa
-                // Verifica se alguém bloqueia com Duque
-                if (!tentarBloqueio(null, jogador, "AJUDA_EXTERNA", "Duque")) {
+            case 2: // Ajuda Externa
+                if (!tentarBloqueioGUI(null, jogador, "AJUDA_EXTERNA", "Duque")) {
                     jogador.setQnt_moedas(jogador.getQnt_moedas() + 2);
-                    efeitoMensagemSucesso(">> Ajuda Externa bem sucedida. +2 moedas");
+                    adicionarMensagem(">> Ajuda Externa bem sucedida. +2 moedas", COR_SUCESSO, false);
+                } else {
+                    adicionarMensagem(">> Ajuda Externa foi bloqueada!", COR_AVISO, false);
                 }
                 break;
 
-            case "3": // Taxar (Duque)
-                if (resolverDesafio(jogador, "Duque")) {
-                    Carta duqueTemp = new Duque();
-                    duqueTemp.executarAcao(jogador);
+            case 3: // Taxar (Duque)
+                if (resolverDesafioGUI(jogador, "Duque")) {
+                    jogador.setQnt_moedas(jogador.getQnt_moedas() + 3);
+                    adicionarMensagem(">> " + jogador.getNome() + " taxou com sucesso. +3 moedas", COR_SUCESSO, false);
                 } else {
                     acaoValida = false;
+                    adicionarMensagem(">> Taxação falhou!", COR_PERIGO, false);
                 }
                 break;
 
-            case "4": // Assassinar
+            case 4: // Assassinar
+                // CORREÇÃO: Verificar moedas ANTES de executar ação
                 if (jogador.getQnt_moedas() < 3) {
-                    // EFEITO: Mensagem de erro em vermelho
-                    efeitoMensagemErro("Moedas insuficientes (Precisa de 3).");
+                    adicionarMensagem("Moedas insuficientes (Precisa de 3).", COR_PERIGO, false);
                     acaoValida = false;
                     break;
                 }
 
-                Jogador alvoAssassino = escolherAlvo(jogador);
+                Jogador alvoAssassino = escolherAlvoGUI(jogador);
                 if (alvoAssassino == null) {
-                    efeitoMensagemErro("Nenhum alvo disponível.");
+                    adicionarMensagem("Nenhum alvo disponível.", COR_PERIGO, false);
                     acaoValida = false;
                     break;
                 }
 
-                jogador.setQnt_moedas(jogador.getQnt_moedas() - 3);
-                // EFEITO: Destaque para ação perigosa
-                efeitoMensagemPerigo(">> Pagou 3 moedas para assassinar " + alvoAssassino.getNome());
+                // CORREÇÃO: Só debitar moedas se o desafio for bem-sucedido
+                if (resolverDesafioGUI(jogador, "Assassino")) {
+                    jogador.setQnt_moedas(jogador.getQnt_moedas() - 3); // Agora debita aqui
+                    adicionarMensagem(">> " + jogador.getNome() + " pagou 3 moedas para assassinar " + alvoAssassino.getNome(),
+                            COR_AVISO, false);
 
-                if (resolverDesafio(jogador, "Assassino")) {
-                    if (!tentarBloqueio(alvoAssassino, jogador, "ASSASSINAR", "Condessa")) {
-                        efeitoMensagemPerigo(">> Assassinato confirmado!");
-                        perderVida(alvoAssassino);
+                    if (!tentarBloqueioGUI(alvoAssassino, jogador, "ASSASSINAR", "Condessa")) {
+                        adicionarMensagem(">> Assassinato confirmado!", COR_PERIGO, false);
+                        perderVidaGUI(alvoAssassino);
+                    } else {
+                        adicionarMensagem(">> Assassinato bloqueado pela Condessa!", COR_AVISO, false);
                     }
                 } else {
                     acaoValida = false;
+                    adicionarMensagem(">> Assassinato falhou no desafio!", COR_PERIGO, false);
                 }
                 break;
 
-            case "5": // Roubar (Capitão)
-                Jogador alvoRoubo = escolherAlvo(jogador);
+            case 5: // Roubar (Capitão)
+                Jogador alvoRoubo = escolherAlvoGUI(jogador);
                 if (alvoRoubo == null) {
-                    efeitoMensagemErro("Nenhum alvo disponível.");
+                    adicionarMensagem("Nenhum alvo disponível.", COR_PERIGO, false);
                     acaoValida = false;
                     break;
                 }
 
-                if (resolverDesafio(jogador, "Capitão")) {
-                    if (!tentarBloqueio(alvoRoubo, jogador, "ROUBAR", "Capitão", "Embaixador")) {
+                if (resolverDesafioGUI(jogador, "Capitão")) {
+                    if (!tentarBloqueioGUI(alvoRoubo, jogador, "ROUBAR", "Capitão", "Embaixador")) {
                         int valor = Math.min(alvoRoubo.getQnt_moedas(), 2);
                         alvoRoubo.setQnt_moedas(alvoRoubo.getQnt_moedas() - valor);
                         jogador.setQnt_moedas(jogador.getQnt_moedas() + valor);
-                        efeitoMensagemSucesso(">> Roubou " + valor + " moedas de " + alvoRoubo.getNome());
+                        adicionarMensagem(">> " + jogador.getNome() + " roubou " + valor + " moedas de " + alvoRoubo.getNome(),
+                                COR_SUCESSO, false);
+                    } else {
+                        adicionarMensagem(">> Roubo bloqueado!", COR_AVISO, false);
                     }
                 } else {
                     acaoValida = false;
+                    adicionarMensagem(">> Roubo falhou no desafio!", COR_PERIGO, false);
                 }
                 break;
 
-            case "6": // Embaixador - CORREÇÃO COMPLETA
-                if (resolverDesafio(jogador, "Embaixador")) {
-                    realizarTrocaEmbaixador(jogador);
+            case 6: // Embaixador - CORREÇÃO COMPLETA DA SELEÇÃO
+                if (resolverDesafioGUI(jogador, "Embaixador")) {
+                    realizarTrocaEmbaixadorGUICorrigido(jogador);
                 } else {
                     acaoValida = false;
+                    adicionarMensagem(">> Troca de cartas falhou no desafio!", COR_PERIGO, false);
                 }
                 break;
 
-            case "7": // Golpe de Estado
-                if (jogador.getQnt_moedas() >= 7) {
+            case 7: // Golpe de Estado
+                // CORREÇÃO: Verificar moedas ANTES
+                if (jogador.getQnt_moedas() < 7) {
+                    adicionarMensagem("Moedas insuficientes (Precisa de 7).", COR_PERIGO, false);
+                    acaoValida = false;
+                    break;
+                }
+
+                Jogador alvoGolpe = escolherAlvoGUI(jogador);
+                if (alvoGolpe != null) {
                     jogador.setQnt_moedas(jogador.getQnt_moedas() - 7);
-                    Jogador alvoGolpe = escolherAlvo(jogador);
-                    if (alvoGolpe != null) {
-                        // EFEITO: Animação especial para golpe de estado
-                        efeitoGolpeEstado(alvoGolpe);
-                        perderVida(alvoGolpe);
+                    adicionarMensagem(">> GOLPE DE ESTADO em " + alvoGolpe.getNome() + "!", COR_PERIGO, true);
+                    perderVidaGUI(alvoGolpe);
+                    // CORREÇÃO: Golpe de Estado elimina diretamente (não pode ser bloqueado)
+                    if (alvoGolpe.getMao().size() > 0) {
+                        perderVidaGUI(alvoGolpe); // Segunda vida perdida
                     }
-                } else {
-                    efeitoMensagemErro("Moedas insuficientes (Precisa de 7).");
-                    acaoValida = false;
                 }
                 break;
 
             default:
-                // CORREÇÃO: Ação inválida - jogador perde a vez (não repete)
-                efeitoMensagemErro("Ação inválida. Você perdeu a vez.");
-                acaoValida = true; // A vez passa mesmo com ação inválida
+                adicionarMensagem("Ação inválida. Você perdeu a vez.", COR_PERIGO, false);
+                acaoValida = true;
                 break;
         }
 
-        // EFEITO: Pausa dramática antes do próximo turno
         if (acaoValida) {
-            pausaDramatica(1500);
+            // CORREÇÃO: Avançar para o próximo jogador após ação válida
+            indiceJogadorAtual++;
+
+            // EFEITO: Pequena pausa antes do próximo turno
+            Timer timer = new Timer(2000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ((Timer)e.getSource()).stop();
+                    processarProximoTurno();
+                }
+            });
+            timer.setRepeats(false);
+            timer.start();
+        } else {
+            // CORREÇÃO: Se ação não foi válida, o jogador atual repete a vez
+            adicionarMensagem(">> " + jogador.getNome() + " repete a vez.", COR_AVISO, false);
+            processarTurno(jogador);
         }
 
-        return acaoValida;
+        atualizarPainelJogadores();
     }
 
-    // --- SISTEMA DE DESAFIOS (MENTIRA) ---
-    private boolean resolverDesafio(Jogador ator, String cartaNecessaria) {
-        // EFEITO: Destacar a declaração do jogador
-        System.out.println(YELLOW + ">> " + ator.getNome() + " diz ter: " + BOLD + cartaNecessaria + RESET);
+    // ==================================================
+    // MÉTODOS ADAPTADOS PARA GUI - CORREÇÕES COMPLETAS
+    // ==================================================
 
-        Jogador desafiante = null;
-        for (Jogador oponente : jogadores) {
-            if (!oponente.equals(ator)) {
-                System.out.print(CYAN + oponente.getNome() + RESET + ", deseja contestar? (s/n): ");
-                if (scanner.nextLine().equalsIgnoreCase("s")) {
-                    desafiante = oponente;
+    // CORREÇÃO: Sistema de desafios adaptado para GUI
+    private boolean resolverDesafioGUI(Jogador ator, String cartaNecessaria) {
+        adicionarMensagem(">> " + ator.getNome() + " diz ter: " + cartaNecessaria, Color.ORANGE, false);
+
+        // CORREÇÃO: Encontrar todos os possíveis desafiantes
+        List<Jogador> possiveisDesafiantes = new ArrayList<>();
+        for (Jogador j : jogadores) {
+            if (!j.equals(ator)) {
+                possiveisDesafiantes.add(j);
+            }
+        }
+
+        if (possiveisDesafiantes.isEmpty()) {
+            return true; // Ninguém para contestar
+        }
+
+        // CORREÇÃO: Diálogo interativo para desafio com todos os jogadores
+        JPanel painelDesafio = new JPanel(new BorderLayout());
+        JLabel pergunta = new JLabel(ator.getNome() + " está usando " + cartaNecessaria + ". Quem desafia?");
+        JComboBox<String> comboDesafiantes = new JComboBox<>();
+
+        comboDesafiantes.addItem("Ninguém desafia");
+        for (Jogador j : possiveisDesafiantes) {
+            comboDesafiantes.addItem(j.getNome());
+        }
+
+        painelDesafio.add(pergunta, BorderLayout.NORTH);
+        painelDesafio.add(comboDesafiantes, BorderLayout.CENTER);
+
+        int resultado = JOptionPane.showConfirmDialog(frame, painelDesafio,
+                "Desafio", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (resultado == JOptionPane.OK_OPTION && comboDesafiantes.getSelectedIndex() > 0) {
+            String nomeDesafiante = (String) comboDesafiantes.getSelectedItem();
+            Jogador desafiante = null;
+            for (Jogador j : possiveisDesafiantes) {
+                if (j.getNome().equals(nomeDesafiante)) {
+                    desafiante = j;
                     break;
                 }
             }
-        }
 
-        if (desafiante == null) return true;
+            adicionarMensagem("!!! DESAFIO ACEITO por " + desafiante.getNome() + "!!!", COR_PERIGO, true);
 
-        // EFEITO: Animação de desafio
-        efeitoDesafio(ator, desafiante);
-
-        int indiceCarta = -1;
-        for (int i = 0; i < ator.getMao().size(); i++) {
-            if (ator.getMao().get(i).getNome().equalsIgnoreCase(cartaNecessaria)) {
-                indiceCarta = i;
-                break;
-            }
-        }
-
-        if (indiceCarta != -1) {
-            // EFEITO: Verdade comprovada
-            efeitoVerdadeDesafio(ator, cartaNecessaria, desafiante);
-            perderVida(desafiante);
-
-            Carta c = ator.getMao().remove(indiceCarta);
-            baralho.devolverCarta(c);
-            baralho.embaralhar();
-            ator.getMao().add(baralho.comprarCarta());
-
-            return true;
-        } else {
-            // EFEITO: Mentira descoberta
-            efeitoMentiraDesafio(ator, cartaNecessaria);
-            perderVida(ator);
-            return false;
-        }
-    }
-
-    // --- SISTEMA DE BLOQUEIOS - CORREÇÃO: Verificação de null ---
-    private boolean tentarBloqueio(Jogador defensor, Jogador atacante, String acao, String... cartasPossiveis) {
-        // Caso especial: Ajuda Externa (qualquer um pode bloquear)
-        if (defensor == null && acao.equals("AJUDA_EXTERNA")) {
-            for (Jogador j : jogadores) {
-                if (!j.equals(atacante)) {
-                    System.out.print(CYAN + j.getNome() + RESET + ", deseja bloquear a Ajuda Externa com Duque? (s/n): ");
-                    if (scanner.nextLine().equalsIgnoreCase("s")) {
-                        System.out.println(YELLOW + j.getNome() + " tenta bloquear!" + RESET);
-                        if (resolverDesafio(j, "Duque")) {
-                            efeitoBloqueioSucesso(j.getNome(), "Ajuda Externa");
-                            return true;
-                        } else {
-                            efeitoBloqueioFalha(j.getNome());
-                            return false;
-                        }
-                    }
+            // CORREÇÃO: Verificação real das cartas
+            boolean temCarta = false;
+            for (Carta c : ator.getMao()) {
+                if (c.getNome().equalsIgnoreCase(cartaNecessaria)) {
+                    temCarta = true;
+                    break;
                 }
             }
+
+            if (temCarta) {
+                adicionarMensagem(">> " + ator.getNome() + " FALOU A VERDADE! Tinha " + cartaNecessaria, COR_SUCESSO, false);
+                adicionarMensagem(">> " + desafiante.getNome() + " perde uma vida por errar o desafio.", COR_PERIGO, false);
+                perderVidaGUI(desafiante);
+                return true;
+            } else {
+                adicionarMensagem(">> " + ator.getNome() + " MENTIU! Não tinha " + cartaNecessaria, COR_PERIGO, false);
+                adicionarMensagem(">> " + ator.getNome() + " perde uma vida.", COR_PERIGO, false);
+                perderVidaGUI(ator);
+                return false;
+            }
+        }
+
+        return true; // Ninguém contestou
+    }
+
+    // CORREÇÃO: Sistema de bloqueios adaptado para GUI
+    private boolean tentarBloqueioGUI(Jogador defensor, Jogador atacante, String acao, String... cartasPossiveis) {
+        // Caso especial: Ajuda Externa (qualquer um pode bloquear)
+        if (defensor == null && acao.equals("AJUDA_EXTERNA")) {
+            List<Jogador> possiveisBloqueadores = new ArrayList<>();
+            for (Jogador j : jogadores) {
+                if (!j.equals(atacante)) {
+                    possiveisBloqueadores.add(j);
+                }
+            }
+
+            if (possiveisBloqueadores.isEmpty()) return false;
+
+            JPanel painelBloqueio = new JPanel(new BorderLayout());
+            JLabel pergunta = new JLabel("Quem bloqueia a Ajuda Externa com Duque?");
+            JComboBox<String> comboBloqueadores = new JComboBox<>();
+
+            comboBloqueadores.addItem("Ninguém bloqueia");
+            for (Jogador j : possiveisBloqueadores) {
+                comboBloqueadores.addItem(j.getNome());
+            }
+
+            painelBloqueio.add(pergunta, BorderLayout.NORTH);
+            painelBloqueio.add(comboBloqueadores, BorderLayout.CENTER);
+
+            int resultado = JOptionPane.showConfirmDialog(frame, painelBloqueio,
+                    "Bloqueio", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+            if (resultado == JOptionPane.OK_OPTION && comboBloqueadores.getSelectedIndex() > 0) {
+                String nomeBloqueador = (String) comboBloqueadores.getSelectedItem();
+                Jogador bloqueador = null;
+                for (Jogador j : possiveisBloqueadores) {
+                    if (j.getNome().equals(nomeBloqueador)) {
+                        bloqueador = j;
+                        break;
+                    }
+                }
+
+                adicionarMensagem(">> " + bloqueador.getNome() + " tenta bloquear com Duque!", COR_AVISO, false);
+                return resolverDesafioGUI(bloqueador, "Duque");
+            }
             return false;
         }
 
-        // CORREÇÃO: Verificar se defensor não é null
         if (defensor == null) {
             return false;
         }
 
-        // Casos direcionados (Roubo/Assassinato)
-        System.out.print(CYAN + defensor.getNome() + RESET + ", deseja bloquear o " + acao + "? (s/n): ");
-        if (scanner.nextLine().equalsIgnoreCase("s")) {
+        // CORREÇÃO: Bloqueio direcionado
+        int resposta = JOptionPane.showConfirmDialog(frame,
+                defensor.getNome() + ", deseja bloquear " + acao + "?",
+                "Bloqueio",
+                JOptionPane.YES_NO_OPTION);
+
+        if (resposta == JOptionPane.YES_OPTION) {
             String cartaBloqueio = cartasPossiveis[0];
             if (cartasPossiveis.length > 1) {
-                System.out.println("Bloquear com qual carta? (1: " + cartasPossiveis[0] + " / 2: " + cartasPossiveis[1] + ")");
-                if (scanner.nextLine().equals("2")) cartaBloqueio = cartasPossiveis[1];
+                // CORREÇÃO: Escolher carta de bloqueio
+                cartaBloqueio = (String) JOptionPane.showInputDialog(frame,
+                        "Bloquear com qual carta?",
+                        "Escolha da Carta",
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        cartasPossiveis,
+                        cartasPossiveis[0]);
             }
 
-            System.out.println(BLUE + ">> " + defensor.getNome() + " bloqueia usando " + cartaBloqueio + RESET);
+            adicionarMensagem(">> " + defensor.getNome() + " bloqueia usando " + cartaBloqueio, COR_AVISO, false);
 
-            System.out.print(atacante.getNome() + ", duvida do bloqueio? (s/n): ");
-            if (scanner.nextLine().equalsIgnoreCase("s")) {
-                if (resolverDesafio(defensor, cartaBloqueio)) {
-                    efeitoBloqueioSucesso(defensor.getNome(), acao);
-                    return true;
-                } else {
-                    efeitoBloqueioFalha(defensor.getNome());
-                    return false;
-                }
+            // CORREÇÃO: Desafio do bloqueio
+            int desafio = JOptionPane.showConfirmDialog(frame,
+                    atacante.getNome() + ", duvida do bloqueio?",
+                    "Desafio do Bloqueio",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (desafio == JOptionPane.YES_OPTION) {
+                return !resolverDesafioGUI(defensor, cartaBloqueio);
             }
-            efeitoBloqueioSucesso(defensor.getNome(), acao);
-            return true;
+            return true; // Bloqueio aceito
         }
-        return false;
+        return false; // Ninguém bloqueou
     }
 
-    // --- MÉTODOS AUXILIARES ---
-
-    private void perderVida(Jogador j) {
+    // CORREÇÃO: Perder vida adaptado para GUI
+    private void perderVidaGUI(Jogador j) {
         if (j.getMao().isEmpty()) return;
 
-        // EFEITO: Destaque para momento de perder vida
-        System.out.println(RED + BOLD + "💀 " + j.getNome() + " está perdendo uma vida!" + RESET);
-        pausaDramatica(1000);
+        adicionarMensagem("💀 " + j.getNome() + " está perdendo uma vida!", COR_PERIGO, false);
 
-        System.out.println(j.getNome() + ", escolha uma carta para perder:");
+        // CORREÇÃO: Diálogo para escolher carta para perder
+        String[] opcoesCartas = new String[j.getMao().size()];
         for (int i = 0; i < j.getMao().size(); i++) {
-            System.out.println(i + ": " + j.getMao().get(i).getNome());
+            opcoesCartas[i] = j.getMao().get(i).getNome();
         }
 
-        int escolha = -1;
-        try {
-            System.out.print("Número: ");
-            escolha = Integer.parseInt(scanner.nextLine());
-        } catch (Exception e) {}
+        String cartaEscolhida = (String) JOptionPane.showInputDialog(frame,
+                j.getNome() + ", escolha uma carta para perder:",
+                "Perder Vida",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opcoesCartas,
+                opcoesCartas[0]);
 
-        if (escolha >= 0 && escolha < j.getMao().size()) {
-            Carta c = j.getMao().remove(escolha);
-            baralho.devolverCarta(c);
-            // EFEITO: Feedback da carta perdida
-            efeitoPerdaCarta(j.getNome(), c.getNome());
+        if (cartaEscolhida != null) {
+            for (int i = 0; i < j.getMao().size(); i++) {
+                if (j.getMao().get(i).getNome().equals(cartaEscolhida)) {
+                    Carta c = j.getMao().remove(i);
+                    baralho.devolverCarta(c);
+                    adicionarMensagem(">> " + j.getNome() + " perdeu " + c.getNome(), COR_PERIGO, false);
+                    break;
+                }
+            }
         } else {
+            // CORREÇÃO: Perder carta aleatória se não escolher
             Carta c = j.getMao().remove(0);
             baralho.devolverCarta(c);
-            efeitoPerdaCarta(j.getNome(), c.getNome());
+            adicionarMensagem(">> " + j.getNome() + " perdeu " + c.getNome(), COR_PERIGO, false);
         }
+
+        // CORREÇÃO: Verificar se jogador foi eliminado
+        if (j.getMao().isEmpty()) {
+            adicionarMensagem("🚫 " + j.getNome() + " FOI ELIMINADO!", COR_PERIGO, true);
+        }
+
+        atualizarPainelJogadores();
     }
 
-    // CORREÇÃO: Validação de alvo
-    private Jogador escolherAlvo(Jogador atacante) {
+    // CORREÇÃO: Escolher alvo adaptado para GUI
+    private Jogador escolherAlvoGUI(Jogador atacante) {
         List<Jogador> alvos = new ArrayList<>();
         for (Jogador j : jogadores) {
             if (!j.equals(atacante)) alvos.add(j);
@@ -370,206 +668,168 @@ public class JOO {
             return null;
         }
 
-        // EFEITO: Lista de alvos com numeração clara
-        System.out.println(BOLD + "Escolha o alvo:" + RESET);
+        String[] opcoesAlvos = new String[alvos.size()];
         for (int i = 0; i < alvos.size(); i++) {
-            System.out.println(YELLOW + i + RESET + ": " + alvos.get(i).getNome());
+            opcoesAlvos[i] = alvos.get(i).getNome() + " (" + alvos.get(i).getQnt_moedas() + "💰, " +
+                    alvos.get(i).getMao().size() + "🃏)";
         }
 
-        try {
-            int id = Integer.parseInt(scanner.nextLine());
-            if (id >= 0 && id < alvos.size()) {
-                return alvos.get(id);
-            }
-        } catch (Exception e) {}
+        String alvoEscolhido = (String) JOptionPane.showInputDialog(frame,
+                "Escolha o alvo:",
+                "Selecionar Alvo",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opcoesAlvos,
+                opcoesAlvos[0]);
 
-        return alvos.get(0);
+        if (alvoEscolhido != null) {
+            for (Jogador j : alvos) {
+                if (alvoEscolhido.contains(j.getNome())) {
+                    return j;
+                }
+            }
+        }
+
+        return alvos.isEmpty() ? null : alvos.get(0);
     }
 
-    // CORREÇÃO COMPLETA: Troca de cartas do Embaixador
-    private void realizarTrocaEmbaixador(Jogador j) {
-        // EFEITO: Feedback visual do processo
-        efeitoMensagemInfo(">> Comprando 2 cartas do baralho...");
-        pausaDramatica(800);
+    // CORREÇÃO COMPLETA: Troca de cartas do Embaixador - VERSÃO CORRIGIDA DA SELEÇÃO
+    private void realizarTrocaEmbaixadorGUICorrigido(Jogador j) {
+        adicionarMensagem(">> " + j.getNome() + " está trocando cartas com Embaixador...", COR_AVISO, false);
 
+        // Comprar 2 cartas do baralho
         Carta c1 = baralho.comprarCarta();
         Carta c2 = baralho.comprarCarta();
 
-        // CORREÇÃO: Criar lista temporária para as novas cartas
         List<Carta> maoTemp = new ArrayList<>(j.getMao());
-
         if (c1 != null) maoTemp.add(c1);
         if (c2 != null) maoTemp.add(c2);
 
-        System.out.println(BOLD + "Suas cartas disponíveis para troca:" + RESET);
-        for (int i = 0; i < maoTemp.size(); i++) {
-            System.out.println(PURPLE + i + ": " + maoTemp.get(i).getNome() + RESET);
+        // CORREÇÃO: Usar JList com seleção múltipla para escolher cartas
+        JPanel painelTroca = new JPanel(new BorderLayout());
+        JLabel label = new JLabel("<html>Selecione <b>EXATAMENTE 2</b> cartas para devolver ao baralho:<br>"
+                + "(Use Ctrl+Click para selecionar múltiplas)</html>");
+
+        // Lista de nomes das cartas
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        for (Carta carta : maoTemp) {
+            listModel.addElement(carta.getNome());
         }
 
-        // CORREÇÃO: Devolver 2 cartas ao baralho
-        System.out.println(BOLD + "Escolha 2 cartas para devolver ao baralho:" + RESET);
-        List<Carta> cartasParaDevolver = new ArrayList<>();
+        JList<String> listaCartas = new JList<>(listModel);
+        listaCartas.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        listaCartas.setVisibleRowCount(6);
 
-        for (int k = 0; k < 2; k++) {
-            System.out.print("Digite o índice da carta " + (k+1) + " para devolver: ");
-            try {
-                int idx = Integer.parseInt(scanner.nextLine());
-                if (idx >= 0 && idx < maoTemp.size()) {
-                    cartasParaDevolver.add(maoTemp.remove(idx));
-                    // Mostrar cartas restantes
-                    System.out.println(BOLD + "Cartas restantes:" + RESET);
-                    for (int i = 0; i < maoTemp.size(); i++) {
-                        System.out.println(PURPLE + i + ": " + maoTemp.get(i).getNome() + RESET);
+        JScrollPane scrollPane = new JScrollPane(listaCartas);
+
+        painelTroca.add(label, BorderLayout.NORTH);
+        painelTroca.add(scrollPane, BorderLayout.CENTER);
+
+        int resultado;
+        do {
+            resultado = JOptionPane.showConfirmDialog(frame, painelTroca,
+                    "Troca de Cartas - Embaixador", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            if (resultado == JOptionPane.OK_OPTION) {
+                List<String> selecionadas = listaCartas.getSelectedValuesList();
+                if (selecionadas.size() == 2) {
+                    // CORREÇÃO: Remover cartas selecionadas
+                    List<Carta> cartasParaRemover = new ArrayList<>();
+                    for (String nomeCarta : selecionadas) {
+                        for (Carta c : maoTemp) {
+                            if (c.getNome().equals(nomeCarta) && !cartasParaRemover.contains(c)) {
+                                cartasParaRemover.add(c);
+                                break;
+                            }
+                        }
                     }
+
+                    // CORREÇÃO: Remover da lista temporária
+                    maoTemp.removeAll(cartasParaRemover);
+
+                    // CORREÇÃO: Devolver cartas ao baralho
+                    for (Carta c : cartasParaRemover) {
+                        baralho.devolverCarta(c);
+                        adicionarMensagem(">> Devolveu: " + c.getNome(), COR_AVISO, false);
+                    }
+
+                    // CORREÇÃO: Atualizar mão do jogador
+                    j.getMao().clear();
+                    j.getMao().addAll(maoTemp);
+
+                    adicionarMensagem(">> " + j.getNome() + " completou a troca de cartas", COR_SUCESSO, false);
+                    break;
                 } else {
-                    System.out.println(RED + "Índice inválido. Devolvendo a primeira carta." + RESET);
-                    cartasParaDevolver.add(maoTemp.remove(0));
+                    JOptionPane.showMessageDialog(frame,
+                            "Você deve selecionar EXATAMENTE 2 cartas!\nSelecionadas: " + selecionadas.size(),
+                            "Seleção Incorreta",
+                            JOptionPane.WARNING_MESSAGE);
                 }
-            } catch (Exception e) {
-                System.out.println(RED + "Entrada inválida. Devolvendo a primeira carta." + RESET);
-                cartasParaDevolver.add(maoTemp.remove(0));
-            }
-        }
-
-        // CORREÇÃO: Atualizar a mão do jogador com as cartas restantes
-        j.getMao().clear();
-        j.getMao().addAll(maoTemp);
-
-        // Devolver cartas ao baralho
-        for (Carta c : cartasParaDevolver) {
-            baralho.devolverCarta(c);
-            System.out.println(GREEN + "Devolveu: " + c.getNome() + RESET);
-        }
-
-        // EFEITO: Resumo final da troca
-        efeitoMensagemSucesso("Troca concluída! Sua nova mão:");
-        for (Carta c : j.getMao()) {
-            System.out.print(PURPLE + "[" + c.getNome() + "] " + RESET);
-        }
-        System.out.println();
-    }
-
-    // ==================================================
-    // MÉTODOS DE EFEITOS VISUAIS - JAVA EFFECTS
-    // ==================================================
-
-    // EFEITO: Limpar console para melhor visualização
-    private void limparConsole() {
-        try {
-            if (System.getProperty("os.name").contains("Windows")) {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
             } else {
-                System.out.print("\033[H\033[2J");
-                System.out.flush();
+                // CORREÇÃO: Se cancelar, devolver as cartas compradas
+                if (c1 != null) baralho.devolverCarta(c1);
+                if (c2 != null) baralho.devolverCarta(c2);
+                adicionarMensagem(">> Troca de cartas cancelada", COR_AVISO, false);
+                break;
             }
-        } catch (Exception e) {
-            // Fallback: imprimir várias linhas vazias
-            for (int i = 0; i < 50; i++) {
-                System.out.println();
-            }
-        }
+        } while (true);
     }
 
-    // EFEITO: Pausa dramática para tensão
-    private void pausaDramatica(int milissegundos) {
-        try {
-            Thread.sleep(milissegundos);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    // ==================================================
+    // MÉTODOS DE EFEITOS VISUAIS - JAVA EFFECTS GRÁFICOS
+    // ==================================================
+
+    // EFEITO: Adicionar mensagem colorida na área de texto
+    private void adicionarMensagem(String texto, Color cor, boolean negrito) {
+        // CORREÇÃO: Manter o estilo base e adicionar formatação
+        areaTexto.setForeground(cor);
+        if (negrito) {
+            areaTexto.setFont(new Font("Consolas", Font.BOLD, 12));
+        } else {
+            areaTexto.setFont(new Font("Consolas", Font.PLAIN, 12));
         }
+        areaTexto.append(texto + "\n");
+        areaTexto.setCaretPosition(areaTexto.getDocument().getLength());
     }
 
     // EFEITO: Animação de início do jogo
-    private void efeitoInicioJogo() {
-        System.out.println(BOLD + GREEN + "\nIniciando jogo..." + RESET);
-        for (int i = 0; i < 3; i++) {
-            System.out.print(BLUE + "⚡" + RESET);
-            pausaDramatica(300);
-        }
-        System.out.println(BOLD + GREEN + " PRONTO!\n" + RESET);
-        pausaDramatica(1000);
+    private void efeitoAnimacaoInicio() {
+        Timer timer = new Timer(500, new ActionListener() {
+            int contador = 0;
+            String[] mensagens = {"Iniciando jogo", "Distribuindo cartas", "Pronto!"};
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (contador < mensagens.length) {
+                    adicionarMensagem(mensagens[contador] + "...", COR_DESTAQUE, true);
+                    contador++;
+                } else {
+                    ((Timer)e.getSource()).stop();
+                }
+            }
+        });
+        timer.start();
     }
 
-    // EFEITO: Vitória com celebração
+    // EFEITO: Animação de vitória
     private void efeitoVitoria(Jogador vencedor) {
-        System.out.println(BOLD + YELLOW + "\n✨✨✨✨✨✨✨✨✨✨✨✨✨✨" + RESET);
-        System.out.println(BOLD + GREEN + "*** VITÓRIA DE " + vencedor.getNome() + "! ***" + RESET);
-        System.out.println(BOLD + YELLOW + "✨✨✨✨✨✨✨✨✨✨✨✨✨✨" + RESET);
+        adicionarMensagem("\n✨✨✨✨✨✨✨✨✨✨✨✨✨✨", Color.YELLOW, true);
+        adicionarMensagem("*** VITÓRIA DE " + vencedor.getNome() + "! ***", COR_SUCESSO, true);
+        adicionarMensagem("✨✨✨✨✨✨✨✨✨✨✨✨✨✨", Color.YELLOW, true);
 
-        // Efeito de confete
-        for (int i = 0; i < 5; i++) {
-            System.out.print("🎉 ");
-            pausaDramatica(200);
+        // CORREÇÃO: Diálogo de vitória
+        JOptionPane.showMessageDialog(frame,
+                "🎉 " + vencedor.getNome() + " VENCEU O JOGO! 🎉",
+                "VITÓRIA",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // EFEITO: Obter texto formatado das cartas
+    private String obterTextoCartas(Jogador jogador) {
+        StringBuilder sb = new StringBuilder();
+        for (Carta c : jogador.getMao()) {
+            sb.append("[").append(c.getNome()).append("] ");
         }
-        System.out.println();
-    }
-
-    // EFEITO: Mensagens coloridas por tipo
-    private void efeitoMensagemSucesso(String mensagem) {
-        System.out.println(GREEN + BOLD + mensagem + RESET);
-    }
-
-    private void efeitoMensagemErro(String mensagem) {
-        System.out.println(RED + BOLD + mensagem + RESET);
-    }
-
-    private void efeitoMensagemInfo(String mensagem) {
-        System.out.println(CYAN + mensagem + RESET);
-    }
-
-    private void efeitoMensagemPerigo(String mensagem) {
-        System.out.println(RED + BOLD + "⚠️  " + mensagem + RESET);
-    }
-
-    // EFEITO: Animação de desafio
-    private void efeitoDesafio(Jogador ator, Jogador desafiante) {
-        System.out.println(RED + BOLD + "\n!!! DESAFIO ACEITO !!!" + RESET);
-        System.out.println(YELLOW + "Verificando cartas de " + ator.getNome() + "..." + RESET);
-
-        // Efeito de suspense
-        for (int i = 0; i < 3; i++) {
-            System.out.print("🔍 ");
-            pausaDramatica(400);
-        }
-        System.out.println();
-    }
-
-    // EFEITO: Verdade no desafio
-    private void efeitoVerdadeDesafio(Jogador ator, String carta, Jogador desafiante) {
-        System.out.println(GREEN + BOLD + ">> O ATOR FALOU A VERDADE! Mostrou " + carta + RESET);
-        System.out.println(RED + desafiante.getNome() + " perde uma vida por errar o desafio." + RESET);
-    }
-
-    // EFEITO: Mentira no desafio
-    private void efeitoMentiraDesafio(Jogador ator, String carta) {
-        System.out.println(RED + BOLD + ">> O ATOR MENTIU! Não tem " + carta + RESET);
-        System.out.println(RED + ator.getNome() + " perde uma vida." + RESET);
-    }
-
-    // EFEITO: Bloqueios
-    private void efeitoBloqueioSucesso(String jogador, String acao) {
-        System.out.println(BLUE + BOLD + ">> " + jogador + " bloqueou com sucesso: " + acao + RESET);
-    }
-
-    private void efeitoBloqueioFalha(String jogador) {
-        System.out.println(RED + ">> " + jogador + " falhou no bloqueio!" + RESET);
-    }
-
-    // EFEITO: Golpe de Estado especial
-    private void efeitoGolpeEstado(Jogador alvo) {
-        System.out.println(RED + BOLD + "\n💥 GOLPE DE ESTADO! 💥" + RESET);
-        System.out.println(RED + ">> ALVO: " + alvo.getNome().toUpperCase() + RESET);
-
-        // Efeito dramático
-        for (int i = 0; i < 3; i++) {
-            System.out.print("💣 ");
-            pausaDramatica(300);
-        }
-        System.out.println();
-    }
-
-    // EFEITO: Perda de carta
-    private void efeitoPerdaCarta(String jogador, String carta) {
-        System.out.println(RED + "💀 " + jogador + " perdeu " + carta + RESET);
+        return sb.toString();
     }
 }

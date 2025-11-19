@@ -1,120 +1,52 @@
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 
-public class Baralho extends Jogo {
+public class Baralho {
 
-    private int qntCartas;
-    List<Carta> cartas = new ArrayList<>();
+    private List<Carta> cartas = new ArrayList<>();
 
-    // === CONSTRUTOR (AGORA NO LUGAR CORRETO) ===
     public Baralho() {
-        // 3 de cada carta, igual ao Coup original
-        for (int i = 0; i < 3; i++) {
+        //Popula o baralho (5 de cada carta, total 25)
+        for (int i = 0; i < 5; i++) {
             cartas.add(new Duque());
-            cartas.add(new Assassino());
+            cartas.add(new Assasino());
             cartas.add(new Capitao());
-            cartas.add(new Embaixador());
             cartas.add(new Condessa());
+            cartas.add(new Embaixador());
         }
 
-        qntCartas = cartas.size();
+        // 5. Embaralha o baralho assim que ele é criado
+        this.embaralhar();
     }
 
-public static class Duque extends Carta {
 
-    public Duque() {
-        super("Duque", 3);
-    }
-
-    @Override
-    public void acao() {
-        System.out.println("Duque executa: Taxação (+3 moedas).");
-    }
-
-    @Override
-    public void bloquear() {
-        System.out.println("Duque bloqueia: Ajuda Externa.");
-    }
-}
-
-public static class Assassino extends Carta {
-
-    public Assassino() {
-        super("Assassino", 3);
-    }
-
-    @Override
-    public void acao() {
-        System.out.println("Assassino executa: Golpe por 3 moedas (Assassinato).");
-    }
-
-    @Override
-    public void bloquear() {
-        System.out.println("Assassino não possui bloqueio.");
-    }
-}
-
-public static class Capitao extends Carta {
-
-    public Capitao() {
-        super("Capitão", 3);
-    }
-
-    @Override
-    public void acao() {
-        System.out.println("Capitão executa: Roubar 2 moedas de outro jogador.");
-    }
-
-    @Override
-    public void bloquear() {
-        System.out.println("Capitão bloqueia: Roubo.");
-    }
-}
-
-public static class Embaixador extends Carta {
-
-    public Embaixador() {
-        super("Embaixador", 3);
-    }
-
-    @Override
-    public void acao() {
-        System.out.println("Embaixador executa: Trocar cartas com o baralho.");
-    }
-
-    @Override
-    public void bloquear() {
-        System.out.println("Embaixador bloqueia: Roubo.");
-    }
-}
-
-public static class Condessa extends Carta {
-
-    public Condessa() {
-        super("Condessa", 3);
-    }
-
-    @Override
-    public void acao() {
-        System.out.println("Condessa não possui ação especial.");
-    }
-
-    @Override
-    public void bloquear() {
-        System.out.println("Condessa bloqueia: Assassinato.");
-    }
-}
-
-    public void Embaralhamento() {
+    public void embaralhar() {
         Collections.shuffle(cartas);
+        System.out.println("Baralho foi embaralhado.");
     }
 
+    //Retira a carta do topo do baralho e verifica se esta vazio
     public Carta comprarCarta() {
         if (cartas.isEmpty()) {
-            return null;
+            System.out.println("[ERRO] O baralho está vazio!");
+            return null; // Não há mais cartas
         } else {
+            // Remove a carta da posição 0 (topo)
             return cartas.remove(0);
+        }
+    }
+
+    //Checa o tamanho do baralho
+    public int getTamanho() {
+        return cartas.size();
+    }
+
+    //Devolve a carta ao fundo do baralho
+    public void devolverCarta(Carta carta) {
+        if (carta != null) {
+            cartas.add(carta); //Adiciona no final da lista
         }
     }
 }

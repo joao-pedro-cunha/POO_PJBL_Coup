@@ -1,17 +1,13 @@
 public abstract class Carta {
-    protected String nome;
-    protected int quantidade;
 
-    public Carta(String nome, int quantidade) {
-        this.nome = nome;
-        this.quantidade = quantidade;
-    }
+    public abstract void executarAcao(Jogador jogador);
 
-    public abstract void acao();
+    public abstract String getNome();
 
-    public abstract void bloquear();
-
-    public String getNome() {
-        return nome;
+    public boolean podeBloquear(String acao) {
+        // Por padrão, uma carta não bloqueia nada.
+        // As cartas específicas (Duque, Condessa, etc.) irão sobrescrever (override) isto.
+        return false;
     }
 }
+
